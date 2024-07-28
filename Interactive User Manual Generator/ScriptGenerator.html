@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Integrated ChatGPT and Sentence Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <style>
+    /* CSS styles */
+    body {
+      background-color: #878787;
+    }
+    .container {
+      max-width: 95%;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #c8c9cd;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #333;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .input-label {
+      display: block;
+      margin-top: 10px;
+      color: #555;
+    }
+    .input-field {
+      width: 100%;
+      padding: 5px;
+      margin-top: 5px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    .output-field {
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+      background-color: #fff;
+    }
+    #dialog-box {
+      width: 95%;
+      height: 250px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      overflow-y: scroll;
+      background-color: #f9f9f9;
+    }
+    .assistant-message {
+      margin-bottom: 10px;
+      text-align: left;
+      padding: 10px;
+      border-radius: 5px;
+      background-color: #d0d0d0;
+      color: #000000;
+    }
+    .user-input {
+      display: flex;
+      align-items: center;
+      margin-top: 10px;
+    }
+    #user-input {
+      flex-grow: 1;
+      padding: 5px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+    #send-button {
+      margin-left: 10px;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 3px;
+      background-color: #2299e4;
+      color: #fff;
+      cursor: pointer;
+    }
+    #copy-button {
+      margin-left: 10px;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 3px;
+      background-color: #e9720b;
+      color: #fff;
+      cursor: pointer;
+    }
+    #Save-Output-button {
+      margin-left: 10px;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 3px;
+      background-color: #e9720b;
+      color: #fff;
+      cursor: pointer;
+    }
+    #compile-button {
+      margin-left: 10px;
+      padding: 5px 10px;
+      border: none;
+      border-radius: 3px;
+      background-color: #e9720b;
+      color: #fff;
+      cursor: pointer;
+    }
+    #code-input{
+      width: 95%;
+      height: 250px;
+      margin-top: 20px;
+      padding: 10px;
+      border: 1px solid #1e1e1e;
+      border-radius: 3px;
+      background-color: #1e1e1e;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+
+    <h1 style="color: rgb(0, 0, 0);">AUTOMATION SCRIPT GENERATOR</h1>
+
+    <label class="input-label" style="color: #120404;">Test Title:</label>
+    <textarea id="testTitle" class="input-field" placeholder="Enter Test Title" style="font-family: 'Times New Roman', Times, serif;font-size: medium;"></textarea>
+
+    <label for="ScriptLanguage" class="input-label"style="color: #120404;">Select language:</label>
+    <select name="language" id="ScriptLanguage" class="input-field">
+        <option value="" disabled selected>Select a language</option>
+        <option value="Python">Python</option>
+        <option value="Java">Java</option>
+        <option value="Groovy">Groovy</option>
+
+    </select>
+
+    <label class="input-label "style="color: #120404;">Test Data:</label>
+    <textarea id="testData" class="input-field" placeholder="Enter test data" style="font-family: 'Times New Roman', Times, serif;font-size: medium;"></textarea>
+
+    <label class="input-label"style="color: #120404;">Priority:</label>
+    <textarea id="priority" class="input-field" placeholder="Enter priority" style="font-family: 'Times New Roman', Times, serif;font-size: medium;"></textarea>
+
+    <div class="input-label"style="color: #120404;">
+        <label>Objects & X-Path's </label>
+        <textarea id="Objectsxpath" class="input-field" placeholder="OBJECT_NAME=XPATHS" rows="3"></textarea>
+        <button onclick="generateSentence()" style="background-color: #e9720b; color: #ffffff;border-radius: 3px; padding: 10px;">Generate Test Description </button>
+        <div id="result"></div>
+        <div class="user-input">
+            <textarea id="user-input" style="font-family: 'Times New Roman', Times, serif;font-size: medium;" readonly></textarea>
+            <button onclick="sendMessage()" id="send-button">Generate Automation Script</button>
+            <button onclick="copyChatGPTMessage()" id="copy-button">Copy Generated Script</button>
+            <button onclick="saveOutputToFile()" id="Save-Output-button">Save Output</button>
+
+        </div>
+        <h2>AUTOMATION SCRIPT</h2>
+
+        <div id="outputElement" class="output-field">
+
+            <div id="dialog-box"></div>
+        </div>
+    </div>
+    <div class="container">
+        <h1> Online Compiler </h1>
+
+        <textarea id="code-input" class="code-input" placeholder="Enter your code here"style= "color: #ffffff"></textarea>
+
+        <button id="compile-button">Compile and Run</button>
+
+        <h5>Output:</h5>
+
+        <pre id="output-field" class="output-field"style="background-color: #1e1e1e; color: #ffffff"></pre>
+    </div>
+</div>
+<script>
+
+    // Retrieve the test title from the URL parameter
+    let urlParams = new URLSearchParams(window.location.search);
+    let testTitle = document.getElementById('testTitle').value;
+
+
+    // Populate the test title in the input field
+    const testTitleInput = document.getElementById('testTitle');
+    testTitleInput.value = testTitle;
+
+    function generateSentence() {
+      var details = document.getElementById("testTitle").value;
+      var testData = document.getElementById("testData").value;
+      var objects = document.getElementById("Objectsxpath").value;
+      var ScriptLanguage = document.getElementById("ScriptLanguage").value;
+      var sentence = "Create a " + ScriptLanguage + " automation script for " + details + " using " + testData + " also the Xpaths for Objects are " + objects + ".";
+     // document.getElementById("result").textContent = sentence;
+     document.getElementById("user-input").value = sentence;
+    }
+    var dialogBox = document.getElementById("dialog-box");
+
+    function sendMessage() {
+      var userInput = document.getElementById("user-input").value;
+      if (userInput.trim() === "") {
+        return;
+      }
+      document.getElementById("user-input").value = "";
+      var requestBody = {
+        "messages": [
+          { "role": "system", "content": "You are a helpful assistant." },
+          { "role": "user", "content": userInput }
+        ],
+        "model": "gpt-3.5-turbo"
+      };
+      fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer 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"
+        },
+        body: JSON.stringify(requestBody)
+      })
+        .then(response => response.json())
+        .then(data => handleResponse(data))
+        .catch(error => console.error(error));
+    }
+
+    function saveOutputToFile() {
+    var outputContent = document.getElementById('outputElement').innerHTML; // Assuming 'outputElement' is the element containing the output content
+    var blob = new Blob([outputContent], { type: 'text/html' }); // Create a Blob with the output content
+
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'output.html'; // Specify the filename for the downloaded file
+    a.click();
+  }
+
+
+  function handleResponse(responseData) {
+  // Clear previous response
+  var previousResponse = document.querySelector('.assistant-message');
+  if (previousResponse) {
+    previousResponse.remove();
+  }
+
+  if (responseData.choices && responseData.choices.length > 0) {
+    var choice = responseData.choices[0];
+    if (choice.message && choice.message.content) {
+      var content = choice.message.content.trim().replace(/\r?\n$/, "");
+      var chatGPTMessage = createAssistantMessageElement(content);
+      dialogBox.appendChild(chatGPTMessage);
+      // Scroll to the bottom of the dialog box
+      dialogBox.scrollTop = dialogBox.scrollHeight;
+    }
+  }
+}
+
+    var assistantMessage
+
+
+    function createAssistantMessageElement(content) {
+       assistantMessage = document.createElement("div");
+      assistantMessage.className = "assistant-message";
+      assistantMessage.innerText = "" + content;
+      return assistantMessage;
+    }
+
+
+    function copyChatGPTMessage() {
+      var chatGPTMessage = dialogBox.lastChild.innerText;
+      navigator.clipboard.writeText(chatGPTMessage)
+        .then(() => {
+          alert("Script copied to clipboard!");
+        })
+        .catch(err => {
+          console.error("Failed to copy ", err);
+        });
+    }
+    var outputContent = document.getElementById('dialog-box').innerHTML; // Assuming 'outputElement' is the element containing the output content
+
+     const compileButton = document.getElementById('compile-button');
+    const codeInput = document.getElementById('code-input');
+    const inputField = document.getElementById('input-field');
+    const outputField = document.getElementById('output-field');
+    compileButton.addEventListener('click', compileAndRun);
+    function compileAndRun() {
+      const code = codeInput.value;
+      const input = inputField.value;
+      const language = 'JAVA'; // Set the programming language (uppercase)
+      const requestBody = {
+        source: code,
+        lang: language,
+        input: input
+      };
+      fetch('https://api.hackerearth.com/v3/code/run/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.run_status && data.run_status.output) {
+            outputField.textContent = data.run_status.output;
+          } else {
+            outputField.textContent = 'Unknown error occurred';
+          }
+        })
+        .catch(error => {
+          console.error(error);
+          outputField.textContent = 'Failed to compile and run the code';
+        });
+    }
+
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Generation</title>
+    <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #878787;
+    }
+
+    .container {
+      max-width: 1000%;
+      margin: 0 auto;
+      padding: 20px;
+      background-color: #c8c9cd;
+      border-radius: 5px;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+
+    input[type="text"] {
+      width: 1000%;
+      padding: 5px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 3px;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      padding: 10px;
+      border: none;
+      border-radius: 3px;
+      background-color: #e9720b;
+      color: #fff;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button + button {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+    <h1 style="color: rgb(0, 0, 0);"style="font-family: 'Times New Roman', Times, serif;font-size: medium;">CREATE</h1>
+
+    <style>
+      .container {
+          width: 95%;
+      }
+
+      textarea {
+          box-sizing: border-box;
+          width: 100%;
+          font-family: 'Times New Roman', Times, serif;
+          font-size: medium;
+      }
+  </style>
+
+    <div class="container">
+        <label for="testTitle">Test Title:</label>
+        <textarea id="testTitle" placeholder="Enter test title"></textarea>
+    </div>
+
+    <button id="generateManual">Generate Manual Test Cases</button>
+    <button id="generateAutomation">Generate Automation Script</button>
+</div>
+
+<script>
+    const generateManualButton = document.getElementById('generateManual');
+    const generateAutomationButton = document.getElementById('generateAutomation');
+    const testTitleInput = document.getElementById('testTitle');
+
+    generateManualButton.addEventListener('click', function() {
+      const testTitle = testTitleInput.value;
+      alert('Generating manual test cases for: ' + testTitle);
+     // Open the ManualTest.html page withCaseGenerator Page with test title pre-populated
+     const url = './Manual_Page.html?testTitle=' + encodeURIComponent(testTitle);
+      window.open(url, '_blank');
+    });
+
+    generateAutomationButton.addEventListener('click', function() {
+      const testTitle = testTitleInput.value;
+      alert('Generating automation script for: ' + testTitle);
+
+      // Open the AutomationScriptGenerator.html page with the test title pre-populated
+      const url = './Automation_Page.html?testTitle=' + encodeURIComponent(testTitle);
+      window.open(url, '_blank');
+    });
+  </script>
+</body>
+</html>
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Testcase Generator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+
+    <style>
+  body {
+    background-color: #878787;
+  }
+  .container {
+    max-width: 95%;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #c8c9cd;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  h1 {
+    color: #333;
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  form {
+    margin-bottom: 20px;
+  }
+  label {
+    display: block;
+    margin-top: 10px;
+    color: #555;
+  }
+  input[type="text"],
+  select {
+    width: 95%;
+    padding: 5px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+  }
+  button {
+
+    padding: 5px 10px;
+    border: none;
+    border-radius: 3px;
+    background-color: #e9720b;
+    color: #fff;
+    cursor: pointer;
+    margin-left: 2px;
+    margin-top: 6px;
+  }
+  .message-box {
+    width: 95%;
+    height: 300px;
+    border: 1px solid #ccc;
+    padding: 10px;
+    overflow-y: scroll;
+    background-color: #f9f9f9;
+    margin-bottom: 10px;
+  }
+  .assistant-message {
+    margin-bottom: 10px;
+      text-align: left;
+      padding: 10px;
+      border-radius: 5px;
+      background-color: #d0d0d0;
+      color: #000000;
+  }
+  .user-input {
+    width: 95%;
+
+    display: flex;
+    align-items: center;
+    margin-top: 10px;
+  }
+  #user-input {
+
+    flex-grow: 1;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+  }
+  #send-button {
+    margin-left: 10px;
+  }
+
+</style>
+</head>
+<body>
+<div class="container">
+    <h1>Testcase Generator</h1>
+    <form>
+        <label for="titleInput">Title:</label>
+        <input type="text" id="testTitle" placeholder="Test title"><br><br>
+
+        <label for="numDropdown">Number of Testcase:</label>
+        <select id="numDropdown">
+            <option value="1">1</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
+            <option value="8">8</option>
+            <option value="9">9</option>
+            <option value="10">10</option>
+        </select><br><br>
+
+        <label>Select Fields:</label><br>
+        <input type="checkbox" name="select all" onchange="checkAll()"> Select All
+        <input type="checkbox" name="priority"> Priority
+        <input type="checkbox" name="test steps"> Test Steps
+        <input type="checkbox" name="preconditions"> Preconditions
+        <input type="checkbox" name="estimate time"> Estimate Time
+        <input type="checkbox" name="test data"> Test Data
+        <input type="checkbox" name="expected result"> Expected Result<br>
+
+        <button type="button" onclick="generateSentence()">Generate Testcase</button>
+
+
+
+    </form>
+    <div class="user-input">
+        <textarea id="user-input" placeholder="Test Description"  style="font-family: 'Times New Roman', Times, serif;font-size: medium;"readonly></textarea>
+
+    </div>
+    <button onclick="sendMessage()">Create</button>
+    <h2>Testcase</h2>
+    <div class="message-box" id="assistant-dialog-box"></div>
+    <button onclick="saveOutputToFile()" id="Save-Output-button">Save Output</button>
+
+</div>
+<script>
+     // Retrieve the test title from the URL parameter
+   const urlParams = new URLSearchParams(window.location.search);
+    const testTitle = urlParams.get('testTitle');
+    // Populate the test title in the input field
+    const testTitleInput = document.getElementById('testTitle');
+    testTitleInput.value = testTitle;
+    var selectedHeadings = []; // Global variable to store selected headings
+    function checkAll() {
+      var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+      var selectAllCheckbox = document.querySelector('input[name="select all"]');
+
+      for (var i = 0; i < checkboxes.length; i++) {
+        checkboxes[i].checked = selectAllCheckbox.checked;
+      }
+    }
+
+    function generateSentence() {
+      var titleInput = document.getElementById("testTitle").value;
+      var sentenceInput = document.getElementById("sentenceInput");
+      var TestCount = document.getElementById("numDropdown").value;
+      var checkboxes = document.querySelectorAll('input[type="checkbox"]');
+
+      var sentence = " create " + TestCount+" Manual Test case for " + titleInput + " which includes ";
+      var selectedCheckboxes = Array.from(checkboxes).filter(checkbox => checkbox.checked && checkbox.name !== 'select all');
+
+      for (var i = 0; i < selectedCheckboxes.length; i++) {
+        sentence += selectedCheckboxes[i].name + ", ";
+      }
+
+      sentence = sentence.slice(0, -2); // Remove the trailing comma and space
+     // sentenceInput.value = sentence;
+      // Set the generated sentence as the value of the "Send message" input field
+      document.getElementById("user-input").value = sentence;
+    }
+    var userInput;
+    var assistantDialogBox = document.getElementById("assistant-dialog-box");
+    function sendMessage() {
+      userInput = document.getElementById("user-input").value;
+      if (userInput.trim() === "") {
+        return;
+      }
+      document.getElementById("user-input").value = "";
+      var requestBody = {
+        "messages": [
+          { "role": "system", "content": "You are a helpful assistant." },
+          { "role": "user", "content": userInput }
+        ],
+        "model": "gpt-3.5-turbo"
+      };
+      fetch("https://api.openai.com/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer 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"
+        },
+        body: JSON.stringify(requestBody)
+      })
+      .then(response => response.json())
+      .then(data => handleResponse(data))
+      .catch(error => console.error(error));
+    }
+    function saveOutputToFile() {
+    var outputContent = document.getElementById('assistant-dialog-box').innerHTML; // Assuming 'outputElement' is the element containing the output content
+    var blob = new Blob([outputContent], { type: 'text/plain' }); // Create a Blob with the output content
+
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'output.html'; // Specify the filename for the downloaded file
+    a.click();
+  }
+    function handleResponse(responseData) {
+      if (responseData.choices && responseData.choices.length > 0) {
+        var choice = responseData.choices[0];
+        if (choice.message && choice.message.content) {
+          var content = choice.message.content.trim().replace(/\r?\n$/, "");
+          // Clear previous assistant messages
+          assistantDialogBox.innerHTML = "";
+          var chatGPTMessage = createAssistantMessageElement(content);
+          assistantDialogBox.appendChild(chatGPTMessage);
+          // Scroll to the bottom of the dialog box
+          assistantDialogBox.scrollTop = assistantDialogBox.scrollHeight;
+        }
+      }
+    }
+    function createAssistantMessageElement(content) {
+      var assistantMessage = document.createElement("div");
+      assistantMessage.className = "assistant-message";
+      assistantMessage.innerText = "" + content;
+      return assistantMessage;
+    }
+  </script>
+</body>
+</html>
